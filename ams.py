@@ -10,12 +10,15 @@ Class for AMS data
 import numpy as np
 import matplotlib.pyplot as plt
 
+from CCSTAC_Chamber import chamber_func_tools as chamber_tools
+
 class AMS:
     def __init__(self, relTime, OA, NO3, SO4, NH4, Chl, AW, ON, fON, 
                  f43, f44, f60, O_C, H_C, OM_OC):
         self.relTime = relTime
         self.OA = OA
         self.NO3 = NO3
+        self.IN = NO3 - ON
         self.SO4 = SO4
         self.NH4 = NH4
         self.Chl = Chl
@@ -47,10 +50,21 @@ class AMS:
         OA_ratio_baseline = OA_ratio[(self.relTime >= -0.5) & 
                             (self.relTime < 0.0)].mean()
         self.OA_enhancement = OA_ratio / OA_ratio_baseline
+        
         NO3_ratio = self.NO3/denominator
         NO3_ratio_baseline = NO3_ratio[(self.relTime >= -0.5) & 
                             (self.relTime < 0.0)].mean()
         self.NO3_enhancement = NO3_ratio / NO3_ratio_baseline
+        
+        IN_ratio = self.IN/denominator
+        IN_ratio_baseline = IN_ratio[(self.relTime >= -0.5) & 
+                            (self.relTime < 0.0)].mean()
+        self.IN_enhancement = IN_ratio / IN_ratio_baseline
+        
+        ON_ratio = self.ON/denominator
+        ON_ratio_baseline = ON_ratio[(self.relTime >= -0.5) & 
+                            (self.relTime < 0.0)].mean()
+        self.ON_enhancement = ON_ratio / ON_ratio_baseline
         
     def calc_total_mass(self, DRY=True):
         total_mass = self.OA + self.NO3 + self.SO4 + self.NH4 + self.Chl 
@@ -58,13 +72,7 @@ class AMS:
             total_mass += self.AW
         return total_mass
         
-    #def triangle_plots(self):
-    #    fig, ax = plt.subplots(2)
-    #    ax.plot(sallyX, rightRed, color='red', linestyle='dashed', linewidth=1.5, zorder=-1)
-    #    ax1.plot(sallyX, leftBlue, color='blue', linestyle='dashed', linewidth=1.5, zorder=-1)
-    #    sc1 = ax1.scatter(f43_exp14, f44_exp14, marker='o', s=100, facecolors='none'\
-    #              , c=relTime_exp14, cmap='autumn_r')
-            
+
     def plot_aerosol_timeseries(self):
         fig, ax = plt.subplots(figsize=(12,6))
         ax.plot(self.relTime, self.OA, linewidth=2, color='green')
@@ -78,5 +86,6 @@ class AMS:
         ax2.set_ylabel('non-OA [$\mu$g m$^{-3}$]')
         ax2.set_ylim(0.)
         ax.set_xlim(-4, 6)
-        plt.show()
+        #plt.show()
+        return fig, ax
 
