@@ -11,14 +11,14 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from CCSTAC_Chamber.raw_data import raw_data_util
 
-class MetSensor:
+class MetSensor(raw_data_util.RawDataFile):
     '''Class to read and process raw met files for CSTACC chamber experiments
     '''
     
     def __init__(self, directory, filename):
-        self.directory = directory
-        self.filename = filename
+        super().__init__(directory, filename)
 
     def load_data(self):
         data = pd.read_csv(self.directory + self.filename, 
@@ -31,9 +31,3 @@ class MetSensor:
         data.drop(to_drop, axis=1, inplace=True)
         self.data = data
         
-    def set_relative_time(self, zero_time):
-        self.data['relTime'] = (self.data['dateTimes']
-                                - zero_time).dt.total_seconds()/3600.
-        
-    def write_out(self, outname):
-        self.data.to_csv(outname, index=False)

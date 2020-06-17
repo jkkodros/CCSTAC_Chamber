@@ -15,7 +15,7 @@ class RawDataFile:
     '''Parent class for processing the raw data files from the CSTAC
     lab instruments'''
 
-    def __init__(directory, filename):
+    def __init__(self, directory, filename):
         self.directory = directory
         self.filename = filename
         
