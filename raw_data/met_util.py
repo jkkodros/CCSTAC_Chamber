@@ -31,3 +31,18 @@ class MetSensor(raw_data_util.RawDataFile):
         data.drop(to_drop, axis=1, inplace=True)
         self.data = data
         
+    def plot_met(self):
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.plot(self.data[['relTime']], self.data[['T']], 
+                color='k', linewidth=2)
+        ax2 = ax.twinx()
+        ax2.plot(self.data[['relTime']], self.data[['RH']], 
+                 color='red', linewidth=2)
+        ax.set_xlabel('Time [hr]')
+        ax.set_ylabel('Temperature [C]')
+        ax2.set_ylabel('RH [%]', color='red')
+        ax.set_ylim(0, 30)
+        ax2.set_ylim(0)
+        ax.set_xlim(-1, 6)
+        fig.tight_layout()
+        return fig, ax

@@ -11,14 +11,15 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from CCSTAC_Chamber.raw_data import raw_data_util
 
-class MonitorsLabview:
+
+class MonitorsLabview(raw_data_util.RawDataFile):
     '''Class to process raw gas monitor data from lab from the labview
      '''
 
     def __init__(self, directory, filename):
-        self.directory = directory
-        self.filename = filename
+        super().__init__(directory, filename)
         self.offsets = {'NH3_ppb': 0.387}
     
     def load_data(self):
@@ -38,20 +39,24 @@ class MonitorsLabview:
             if offset:
                 self.data[col] -= offset
 
-    def plot_time_series(self, tspan=None):
+    def plot_time_series(self, tspan=None, species=['NO2', 'O3'], 
+                         tval='dateTimes'):
+        colors = {'NO2_ppb': 'k',
+                  'O3_ppb': 'red',
+                  'NO_ppb': 'green',
+                  'NH3_ppb': 'blue',
+                  'CO2_ppb': 'purple',
+                  'CO_ppb': 'k'}
         fig, ax = plt.subplots(figsize=(12, 6))
-        ax.plot(self.data[['dateTimes']], self.data[['NO2_ppb']], color='k')
-        ax.plot(self.data[['dateTimes']], self.data[['O3_ppb']], color='red')
+        for spec in species:
+            # In case user inputs 'NO2' instead of 'NO2_ppb'
+            val = spec.split('_')[0] + '_ppb'
+            ax.plot(self.data[tval], self.data[[val]], 
+                    color=colors.get(val))
         if tspan:
             ax.set_xlim(tspan[0], tspan[1])
-        ax.set_xlabel('Date and Time')
+        ax.set_xlabel('Time')
         ax.set_ylabel('ppb')
         fig.tight_layout()
         return fig, ax
-    
-    def set_relative_time(self, zero_time):
-        self.data['relTime'] = (self.data['dateTimes']
-                                - zero_time).dt.total_seconds()/3600.
-        
-    def write_out(self, outname):
-        self.data.to_csv(outname, index=False)
+
