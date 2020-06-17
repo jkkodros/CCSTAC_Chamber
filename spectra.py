@@ -12,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import (MultipleLocator, FormatStrFormatter,
                                AutoMinorLocator)
+import time
 
 class Spectra:
     def __init__(self, mz, data):
@@ -55,19 +56,52 @@ class Spectra:
         fig.tight_layout()
         return fig, ax
     
-class SpectraMatrix(Spectra):
+class SpectraMatrix:
     def __init__(self, mz, data, relTime):
         #super().__init__(mz, data)
         self.mz = mz
         self.data = data
         self.relTime = relTime
-        self.data_umr = []
-        self.data_umr_normalized = []
-            
         
+    def timer(func):
+        def wrapper(*args, **kwargs):
+            t_start = time.time()
+            result = func(*args, **kwargs)
+            t_total = time.time() - t_start
+            print('{} took {} seconds to run'.format(func.__name__, t_total))
+            return result
+        return wrapper
+
+    #@timer
     def convert_to_umr(self):
-        pass
-            
+        df = pd.DataFrame(data=self.data, columns=self.mz)
+        df = df.transpose().reset_index()
+        df = df.rename(columns={'index': 'mz'})
+        df['mz'] = df['mz'].round()
+        df_grouped = df.groupby('mz')
+        df_umr = df_grouped.sum().transpose()
+        self.data_umr = df_umr.values
+        self.mz_umr = df_umr.columns.values
+        return self.mz_umr, self.data_umr
     
-    def normalize_spectra(self):
-        pass
+    #@timer
+    def normalize_spectra(self, UMR=True):
+        if UMR:
+            data = self.data_umr
+        else:
+            data = self.data
+        total = data.sum(axis=1)
+        self.data_normalized = data[:,:] / total[:,np.newaxis]
+        return self.data_normalized
+    
+    def get_mz(self, mz, UMR=True, NORM=False):
+        if UMR:
+            data = self.data_umr
+            mz_s = self.mz_umr           
+        else:
+            data = self.data
+            mz_s = self.mz
+        data_at_mz = data[:, mz_s==mz].flatten()
+        if NORM:
+            data_at_mz = data_at_mz / data.sum(axis=1)
+        return data_at_mz

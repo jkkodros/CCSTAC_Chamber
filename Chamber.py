@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import optimize
+import time
 
 
 from CCSTAC_Chamber import spectra
@@ -37,6 +38,16 @@ class Experiment:
     def __repr__(self):
         return 'Experiment: {exp_name}'.format(exp_name=self.experiment_name)
     
+    def timer(func):
+        def wrapper(*args, **kwargs):
+            t_start = time.time()
+            result = func(*args, **kwargs)
+            t_total = time.time() - t_start
+            print('{} took {} seconds to run'.format(func.__name__, t_total))
+            return result
+        return wrapper
+    
+    #@timer
     def get_dataset(self):
         # Return the master dataset as a pandas data frame
         filename = self.experiment_name + '_master_dataset.csv'
@@ -89,9 +100,6 @@ class Experiment:
                     self.O3 = data[(dataset, 'O3')].values
                     self.NH3 = data[(dataset, 'NH3')].values
                 elif dataset == 'SMPS':
-                    #self.Ntot = data[(dataset, 'Ntot')].values
-                    #self.Vtot = data[(dataset, 'Vtot')].values
-                    #self.Mtot = data[(dataset, 'Mtot')].values
                     df_dNdlogDp = data[('SMPS_N')]
                     dp = [*map(float, list(df_dNdlogDp.columns))]
                     dNdlogDp = df_dNdlogDp.values
@@ -103,7 +111,7 @@ class Experiment:
                     df_spectra = data[(dataset)]
                     data_ms = df_spectra.values
                     mz = df_spectra.columns[:].values.astype('float')
-                    self.spectra = spectra.Spectra(mz, data_ms, 
+                    self.spectra = spectra.SpectraMatrix(mz, data_ms, 
                                                    relTime=self.relTime)
                 elif dataset == 'Mass Balance Factors':
                     df_timeseries = self.get_mass_balance_time_series_dataset()
@@ -127,7 +135,7 @@ class Experiment:
                 PM1 = self.ams.calc_total_mass() 
                 PM1 += self.BC
             else:
-                PM1 = self.Mtot
+                PM1 = self.smps.Mtot
             self.PM1 = PM1
         except AttributeError:
             print('Data not yet loaded. Load AMS+MAAP or SMPS first')
@@ -197,4 +205,22 @@ class Experiment:
         self.NH4_produced = produced_all[4]
         self.Chl_produced = produced_all[5]
         
-        
+    def plot_ams_smps_mass(self, BC=True):
+        ams_mass = self.ams.calc_total_mass()
+        smps_mass = self.smps.calc_Mtot()
+            
+        fig, ax = plt.subplots(figsize=(12,6))
+        ax.plot(self.relTime, ams_mass, color='red')
+        ax.plot(self.relTime, smps_mass, color='blue')
+        if BC:
+            try:
+                bc_mass = self.BC
+                ax.plot(self.relTime, bc_mass, color='grey')
+            except AttributeError:
+                print('Load BC data')
+        ax.set_xlim(-4, 6)
+        ax.set_ylim(0)
+        ax.legend(['AMS', 'SMPS', 'BC'])
+        fig.tight_layout()
+        return fig, ax
+
